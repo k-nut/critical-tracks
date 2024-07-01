@@ -1,8 +1,7 @@
 use rusqlite::{Connection, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-
-const FILENAME: &str = "./criticaltracks.sqlite";
+use std::env;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct Entry {
@@ -74,11 +73,16 @@ struct Feature {
 }
 
 fn main() -> Result<()> {
-    let db = Connection::open(FILENAME)?;
+    let args: Vec<String> = env::args().collect();
+    let filepath = &args[1];
+    let start = &args[2];
+    let end = &args[3];
+    let db = Connection::open(filepath)?;
+    eprintln!("{} {}", start, end);
 
     let mut stmt =
-        db.prepare("select timestamp, data from tracks where timestamp < '2023-02-25'")?;
-    let result_iter = stmt.query_map([], |row| {
+        db.prepare("select timestamp, data from tracks where timestamp >= (?1) and timestamp <= (?2)")?;
+    let result_iter = stmt.query_map([start, end], |row| {
         Ok(Row {
             timestamp: row.get(0)?,
             data: row.get(1)?,
